@@ -22,6 +22,17 @@ def aes_cbc_base64_decrypt(cipher_b64: str, key: str, iv: str) -> str:
     return plain.decode("utf-8")
 
 
+def _is_truthy(v: str) -> bool:
+    v = (v or "").strip().upper()
+    return v in ("Y", "1", "T", "TRUE")
+
+def _safe_int(v: str, default: int = 0) -> int:
+    try:
+        return int(float((v or "").strip()))
+    except Exception:
+        return default
+
+
 @dataclass
 class ExecFill:
     order_no: str
@@ -230,17 +241,46 @@ class KISWebSocket:
                 iv = self._aes_iv.get(tr_id)
                 if not key or not iv:
                     continue
+
                 try:
                     plain = aes_cbc_base64_decrypt(data, key, iv)
                     fields = plain.split("^")
-                    order_no = fields[2]
-                    pdno = fields[8]
-                    qty = int(fields[9])
-                    price = int(fields[10])
-                    fill = ExecFill(order_no=order_no, pdno=pdno, qty=qty, price=price, raw_fields=fields)
 
-                    q = self._get_order_queue(order_no)
-                    q.put_nowait(fill)
-                except Exception:
-                    continue
+                    # 기본 필드(네가 준 순서 기준)
+                    # 2: 주문번호, 8: 종목코드, 9: 체결수량, 10: 체결단가
+                    # 12: 거부여부, 13: 체결여부, 14: 접수여부
+                    order_no = fields[2] if len(fields) > 2 else ""
+                    pdno = fields[8] if len(fields) > 8 else ""
+
+                    qty = _safe_int(fields[9] if len(fields) > 9 else "0", 0)
+                    price = _safe_int(fields[10] if len(fields) > 10 else "0", 0)
+
+                    reject_flag = fields[12] if len(fields) > 12 else ""
+                    exec_flag = fields[13] if len(fields) > 13 else ""
+                    accept_flag = fields[14] if len(fields) > 14 else ""
+
+                    is_reject = _is_truthy(reject_flag)
+
+                    # ✅ 실체결로 인정하는 기준:
+                    # - 거부가 아니고
+                    # - 체결수량/체결단가가 양수
+                    is_fill = (not is_reject) and (qty > 0) and (price > 0)
+
+                    if is_fill:
+                        fill = ExecFill(order_no=order_no, pdno=pdno, qty=qty, price=price, raw_fields=fields)
+                        q = self._get_order_queue(order_no)
+                        q.put_nowait(fill)
+                        self.log.info(
+                            "EXEC_FILL order=%s code=%s qty=%s price=%s (rej=%s exec=%s acc=%s)",
+                            order_no, pdno, qty, price, reject_flag, exec_flag, accept_flag
+                        )
+                    else:
+                        # ✅ 실체결이 아닌 이벤트(거부/접수/주문상태 등): 로그만 남김
+                        self.log.info(
+                            "EXEC_NONFILL order=%s code=%s qty=%s price=%s (rej=%s exec=%s acc=%s)",
+                            order_no, pdno, qty, price, reject_flag, exec_flag, accept_flag
+                        )
+
+                except Exception as e:
+                    self.log.warning("EXEC_NOTIFY parse/decrypt failed: %r", e)
                 continue
