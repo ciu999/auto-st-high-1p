@@ -1,3 +1,4 @@
 aiohttp
 websockets
 pycryptodome
+python-dotenv

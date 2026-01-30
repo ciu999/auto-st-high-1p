@@ -1,5 +1,6 @@
 import asyncio
 import math
+import traceback
 from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 
@@ -8,11 +9,15 @@ from .ws import KISWebSocket
 from .time_utils import kst_now
 
 
-def pick_code_from_ranking_item(item: dict) -> Optional[str]:
-    for k in ("stck_shrn_iscd", "mksc_shrn_iscd", "pdno", "PDNO", "code", "stck_code"):
-        v = item.get(k)
-        if v and isinstance(v, str):
-            return v.strip()
+def pick_code_from_ranking_item(item: dict, logger) -> Optional[str]:
+    code = (item.get("stck_shrn_iscd") or item.get("mksc_shrn_iscd") or item.get("code") or "").strip()
+    rate = item.get("prdy_ctrt") or item.get("prdy_ctrt_1") or item.get("fluc_rt") or item.get("rate")
+    try:
+        rate_f = float(str(rate))
+    except Exception:
+        logger.warning("conversion float error when pick code from ranking item")
+    if 20.0 <= rate_f <= 28.0 and code:
+        return code
     return None
 
 
@@ -24,8 +29,12 @@ async def find_candidate(
     session_end: datetime,
 ) -> Optional[str]:
     poll_interval = 1.0 / 3.0  # 초당 3회
+    try_cnt = 0
     while kst_now() < session_end:
         res = await rest.get_ranking_fluctuation(20, 28)
+        if try_cnt < 10:
+            print(res)
+        try_cnt += 1
         items = []
         for k in ("output", "output1", "Output", "Output1"):
             v = res.get(k)
@@ -37,7 +46,7 @@ async def find_candidate(
         for it in items:
             if not isinstance(it, dict):
                 continue
-            code = pick_code_from_ranking_item(it)
+            code = pick_code_from_ranking_item(it, logger)
             if not code:
                 continue
 
@@ -104,6 +113,8 @@ async def ioc_buy_with_ws(
 
             total_qty += filled_qty
             total_value += filled_value
+    except Exception:
+        print(traceback.format_exc())
 
     finally:
         await ws.unsubscribe("H0STASP0", code, approval_key=approval_key)
@@ -155,6 +166,8 @@ async def ioc_sell_with_ws(
             sold_qty += filled_qty
             sold_value += filled_value
             remain -= filled_qty
+    except Exception:
+        print(traceback.format_exc())
 
     finally:
         await ws.unsubscribe("H0STASP0", code, approval_key=approval_key)
@@ -189,6 +202,8 @@ async def wait_for_1pct_then_sell(
             target_hit = True
         except asyncio.TimeoutError:
             logger.warning("Session end reached before target. Force sell attempt.")
+    except Exception:
+        print(traceback.format_exc())
     finally:
         await ws.unsubscribe("H0STCNT0", code, approval_key=approval_key)
 

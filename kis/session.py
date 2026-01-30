@@ -1,3 +1,4 @@
+import traceback
 from datetime import datetime
 from typing import Dict, Optional, Tuple
 
@@ -76,6 +77,9 @@ async def run_trading_session(
                 logger.info("LIQUIDATED code=%s qty=%s avg_sell=%.2f pnl=%.3f%%", code, sold_qty, avg_sell, pnl_pct)
             else:
                 logger.error("LIQUIDATION FAILED code=%s qty=%s (manual check needed)", code, qty)
+
+    except Exception:
+        print(traceback.format_exc())
 
     finally:
         await ws.close()

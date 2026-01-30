@@ -26,6 +26,7 @@ def _is_truthy(v: str) -> bool:
     v = (v or "").strip().upper()
     return v in ("Y", "1", "T", "TRUE")
 
+
 def _safe_int(v: str, default: int = 0) -> int:
     try:
         return int(float((v or "").strip()))
@@ -218,8 +219,8 @@ class KISWebSocket:
                     self._orderbook[code] = (ask1, askq1, bid1, bidq1)
                     self._bump_seq(self._orderbook_seq, code)
                     self._ensure_event(self._orderbook_event, code).set()
-                except Exception:
-                    continue
+                except Exception as e:
+                    self.log.warning("체결가 오류: %r", e)
                 continue
 
             # 체결가: 0|H0STCNT0|...|code^time^price^...
@@ -231,8 +232,8 @@ class KISWebSocket:
                     self._trade_price[code] = price
                     self._bump_seq(self._trade_seq, code)
                     self._ensure_event(self._trade_event, code).set()
-                except Exception:
-                    continue
+                except Exception as e:
+                    self.log.warning("체결가 오류: %r", e)
                 continue
 
             # 체결통보: 1|H0STCNI0/H0STCNI9|...|<b64>

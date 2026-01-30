@@ -1,7 +1,9 @@
 import os
 from dataclasses import dataclass
+from dotenv import load_dotenv
 from datetime import timedelta
 
+load_dotenv()
 
 @dataclass(frozen=True)
 class Config:
