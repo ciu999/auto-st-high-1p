@@ -177,8 +177,10 @@ class KISWebSocket:
 
     async def _recv_loop(self):
         assert self.ws is not None
+        self.log.info("recv loop started")
         while True:
             msg = await self.ws.recv()
+            print(msg)
 
             # subscribe ack + encrypt key/iv
             if isinstance(msg, str) and msg.startswith("{"):

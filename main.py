@@ -65,6 +65,7 @@ async def daily_scheduler():
             )
 
             logger.info("Session ended. Waiting for next schedule cycle.")
+            break
 
 
 def main():
