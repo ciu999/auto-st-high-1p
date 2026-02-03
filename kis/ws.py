@@ -88,7 +88,12 @@ class KISWebSocket:
                 "tr_type": "1",
                 "content-type": "utf-8",
             },
-            "body": {"tr_id": tr_id, "tr_key": tr_key},
+            "body": {
+                "input": {
+                    "tr_id": tr_id,
+                    "tr_key": tr_key
+                }
+            },
         }
         await self.ws.send(json.dumps(msg))
         self.log.info("WS subscribe: %s %s", tr_id, tr_key)
