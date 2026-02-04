@@ -193,15 +193,14 @@ class KISWebSocket:
                     j = json.loads(msg)
                     h = j.get("header") or {}
                     tr_id = h.get("tr_id")
-                    encrypt = h.get("encrypt")
-                    if encrypt == "Y":
-                        out = (j.get("body") or {}).get("output") or {}
-                        iv = out.get("iv")
-                        key = out.get("key")
-                        if tr_id and iv and key:
-                            self._aes_iv[tr_id] = iv
-                            self._aes_key[tr_id] = key
-                            self.log.info("WS encrypt set: %s", tr_id)
+                    # encrypt = h.get("encrypt")
+                    out = (j.get("body") or {}).get("output") or {}
+                    iv = out.get("iv")
+                    key = out.get("key")
+                    if tr_id and iv and key:
+                        self._aes_iv[tr_id] = iv
+                        self._aes_key[tr_id] = key
+                        self.log.info("WS encrypt set: %s", tr_id)
                 except Exception:
                     pass
                 continue
