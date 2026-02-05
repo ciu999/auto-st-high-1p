@@ -90,6 +90,7 @@ async def ioc_buy_with_ws(
 
             seq, ask1, askq1, bid1, bidq1 = await ws.wait_next_orderbook(code, last_seq, timeout=5.0)
             last_seq = seq
+            logger.info("seq %d, ask1 %d, askq1 %d, bid1 %d, bidq1 %d", seq, ask1, askq1, bid1, bidq1)
             if ask1 <= 0:
                 continue
 
