@@ -172,7 +172,7 @@ class KISRest:
             "CANO": self.cfg.cano,
             "ACNT_PRDT_CD": self.cfg.acnt_prdt_cd,
             "PDNO": pdno,
-            "ORD_UNPR": str(ord_unpr),
+            "ORD_UNPR": str(ord_unpr) if ord_unpr > 0 else "",
             "ORD_DVSN": ord_dvsn,
             "CMA_EVLU_AMT_ICLD_YN": "Y",
             "OVRS_ICLD_YN": "Y",

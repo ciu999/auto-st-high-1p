@@ -271,7 +271,9 @@ class KISWebSocket:
                     # ✅ 실체결로 인정하는 기준:
                     # - 거부가 아니고
                     # - 체결수량/체결단가가 양수
-                    is_fill = (not is_reject) and (qty > 0) and (price > 0)
+                    # - 체결여부가 체결이고, 접수여부가 확인
+                    is_fill = (not is_reject) and (qty > 0) and (price > 0)\
+                              and (int(exec_flag) == 2) and (int(accept_flag) == 2)
 
                     if is_fill:
                         fill = ExecFill(order_no=order_no, pdno=pdno, qty=qty, price=price, raw_fields=fields)
@@ -291,3 +293,7 @@ class KISWebSocket:
                 except Exception as e:
                     self.log.warning("EXEC_NOTIFY parse/decrypt failed: %r", e)
                 continue
+
+    @property
+    def orderbook_seq(self):
+        return self._orderbook_seq

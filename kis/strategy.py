@@ -81,7 +81,10 @@ async def ioc_buy_with_ws(
 
     total_qty = 0
     total_value = 0
-    last_seq = ws._orderbook_seq.get(code, 0)
+    last_seq = ws.orderbook_seq.get(code, 0)
+
+    psbl_cash = await rest.inquire_psbl_cash("", ord_unpr=0, ord_dvsn="00")
+    psbl_cash = int(psbl_cash * cash_use_ratio)
 
     try:
         for attempt in range(1, max_attempts + 1):
@@ -94,9 +97,10 @@ async def ioc_buy_with_ws(
             if ask1 <= 0:
                 continue
 
-            psbl_cash = await rest.inquire_psbl_cash(code, ord_unpr=ask1, ord_dvsn="00")
-            psbl_cash = int(psbl_cash * cash_use_ratio)
+            # psbl_cash = await rest.inquire_psbl_cash(code, ord_unpr=ask1, ord_dvsn="00")
+            # psbl_cash = int(psbl_cash * cash_use_ratio)
             affordable = psbl_cash // ask1
+            psbl_cash -= affordable * ask1
             if affordable <= 0:
                 logger.info("No more cash to buy. psbl_cash=%s ask1=%s", psbl_cash, ask1)
                 break
