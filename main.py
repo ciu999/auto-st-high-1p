@@ -29,7 +29,7 @@ async def daily_scheduler():
 
             # 08:30 refresh (이미 08:30~09:20 사이면 즉시 refresh)
             today_0830 = now.replace(hour=8, minute=30, second=0, microsecond=0)
-            if today_0830 <= now < today_0830 + timedelta(hours=1):
+            if today_0830 <= now < today_0830 + timedelta(hours=2):
                 refresh_at = now
             else:
                 refresh_at = next_kst_datetime(8, 30, base=now)
@@ -43,7 +43,7 @@ async def daily_scheduler():
 
             # 09:20 start
             now = kst_now()
-            session_start = now.replace(hour=9, minute=20, second=0, microsecond=0)
+            session_start = now.replace(hour=9, minute=0, second=0, microsecond=0)
             if session_start < now:
                 session_start = now  # 이미 지났으면 즉시 시작(단 15:00 전)
 
