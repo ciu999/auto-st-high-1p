@@ -16,7 +16,7 @@ def pick_code_from_ranking_item(item: dict, logger) -> Optional[str]:
         rate_f = float(str(rate))
     except Exception:
         logger.warning("conversion float error when pick code from ranking item")
-    if 20.0 <= rate_f <= 28.0 and code:
+    if 10.0 <= rate_f <= 27.0 and code:
         return code
     return None
 
